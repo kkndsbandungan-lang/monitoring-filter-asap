@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desain PCB - KKN 31</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --panel:#141B18;
+    --panel-border:#233029;
+    --text:#DCE7E1;
+    --muted:#7D9187;
+    --accent:#4FA0E8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    background-image:
+      linear-gradient(180deg, rgba(11,16,14,0.88) 0%, rgba(11,16,14,0.94) 100%),
+      url('latarlogin.jpg');
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+    min-height:100vh;
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:700px;margin:0 auto;}
+
+  .back-link{
+    display:inline-block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    text-decoration:none;
+    margin-bottom:24px;
+  }
+  .back-link:hover{color:var(--accent);}
+
+  header{text-align:center;margin-bottom:32px;}
+  h1{font-size:22px;font-weight:600;margin:0 0 6px;}
+  .subtitle{color:var(--muted);font-size:13px;margin:0;}
+
+  .panel-group{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+  }
+
+  .image-panel{
+    background:rgba(20,27,24,0.85);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    padding:24px;
+    backdrop-filter:blur(4px);
+    text-align:center;
+  }
+  .image-panel-title{
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .image-panel img{
+    max-width:100%;
+    height:auto;
+    border-radius:10px;
+    background:#0F1512;
+    border:1px solid var(--panel-border);
+  }
+  .image-caption{
+    margin-top:14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="menu.html" class="back-link">&larr; Kembali ke menu</a>
+
+  <header>
+    <h1>Desain PCB</h1>
+    <p class="subtitle">Skematik sirkuit &middot; KKN Kelompok 31</p>
+  </header>
+
+  <div class="panel-group">
+    <div class="image-panel">
+      <div class="image-panel-title">Skematik Rangkaian</div>
+      <img src="skematik.png" alt="Skematik Rangkaian">
+      <div class="image-caption">Skematik jalur dan komponen elektronik</div>
+    </div>
+
+    <div class="image-panel">
+      <div class="image-panel-title">Gambar PCB</div>
+      <img src="gambarPCB.png" alt="Gambar PCB">
+      <div class="image-caption">Layout jalur PCB yang sudah dirancang</div>
+    </div>
+
+    <div class="image-panel">
+      <div class="image-panel-title">Desain 3D</div>
+      <img src="3D.png" alt="Desain 3D PCB">
+      <div class="image-caption">Visualisasi 3D dari PCB yang telah dibuat</div>
+    </div>
+  </div>
+</div>
+
+<script>
+if (sessionStorage.getItem("loggedIn") !== "true") {
+  window.location.href = "login.html";
+}
+</script>
+</body>
+</html>

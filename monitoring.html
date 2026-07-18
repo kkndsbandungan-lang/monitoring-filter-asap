@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring Filter Asap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.3.4/mqtt.min.js"></script>
+<style>
+  :root{
+    --bg:#0B100E;
+    --panel:#141B18;
+    --panel-border:#233029;
+    --text:#DCE7E1;
+    --muted:#7D9187;
+    --safe:#3ED9A0;
+    --warn:#F2A93B;
+    --alarm:#FF5B4F;
+    --accent:#4FA0E8;
+  }
+  *{box-sizing:border-box;}
+  html,body{min-height:100%;}
+  body{
+    margin:0;
+    background-image:
+      linear-gradient(180deg, rgba(11,16,14,0.88) 0%, rgba(11,16,14,0.92) 100%),
+      url('latarlogin.jpg');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:1100px;margin:0 auto;}
+
+  header{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    gap:16px;
+    margin-bottom:32px;
+  }
+  header .logo-side{display:flex;align-items:center;justify-content:center;}
+  header .logo-side img{height:64px;width:auto;max-width:120px;object-fit:contain;}
+  header .title-center{text-align:center;}
+  header .title-center .status{margin-top:8px;display:inline-flex;}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px;letter-spacing:0.2px;}
+  h2{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 14px;text-align:center;}
+  .subtitle{color:var(--muted);font-size:13px;margin:0;}
+  .status{
+    display:flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    padding:8px 14px;border-radius:999px;
+    border:1px solid var(--panel-border);background:var(--panel);
+    white-space:nowrap;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .status.online .dot{background:var(--safe);box-shadow:0 0 8px var(--safe);}
+  .status.offline .dot{background:var(--alarm);box-shadow:0 0 8px var(--alarm);}
+
+  .logout-btn{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    padding:8px 14px;border-radius:999px;
+    border:1px solid var(--panel-border);background:var(--panel);
+    color:var(--muted);cursor:pointer;
+    transition:color .2s ease, border-color .2s ease;
+  }
+  .logout-btn:hover{color:var(--alarm);border-color:var(--alarm);}
+
+  @media (max-width:600px){
+    header{grid-template-columns:1fr;justify-items:center;}
+    header .logo-side img{height:48px;}
+  }
+
+  section{margin-bottom:34px;}
+
+  /* ===== Status sistem (pembakaran & filtrasi) ===== */
+  .system-status-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .system-status-card{
+    background:rgba(20,27,24,0.92);
+    backdrop-filter:blur(4px);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    padding:18px 22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    transition:border-color .3s ease;
+  }
+  .system-status-card .ss-left{display:flex;flex-direction:column;gap:2px;}
+  .system-status-card .ss-label{font-size:14px;font-weight:600;}
+  .system-status-card .ss-sub{font-size:11px;color:var(--muted);}
+  .system-status-card .pill{font-size:12px;padding:6px 14px;}
+
+  .system-status-card.aktif{border-color:var(--warn);}
+  .system-status-card.berhasil{border-color:var(--safe);}
+  .system-status-card.gagal{border-color:var(--alarm);}
+
+  .box-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:20px;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .filter-box{
+    background:rgba(20,27,24,0.92);
+    backdrop-filter:blur(4px);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    padding:22px;
+    transition:border-color .3s ease;
+  }
+  .filter-box.active{border-color:var(--warn);}
+  .filter-box.danger{border-color:var(--alarm);}
+  .box-head{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:18px;
+  }
+  .box-head .label{font-size:14px;font-weight:600;}
+  .pill{
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+    padding:4px 10px;border-radius:999px;letter-spacing:0.5px;
+    background:#1D2722;color:var(--safe);
+  }
+  .pill.warn{background:rgba(242,169,59,0.15);color:var(--warn);}
+  .pill.alarm{background:rgba(255,91,79,0.15);color:var(--alarm);}
+  .pill.muted{background:#1D2722;color:var(--muted);}
+
+  .sensor-split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:520px){
+    .sensor-split{grid-template-columns:1fr;}
+  }
+  .sensor-panel{
+    background:rgba(15,21,18,0.92);
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    padding:16px;
+  }
+  .sensor-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;text-align:center;}
+  .sensor-sub{font-size:10px;color:var(--muted);margin-bottom:10px;text-align:center;}
+
+  .ring-wrap{display:flex;justify-content:center;position:relative;margin-bottom:6px;}
+  .ring-svg{width:130px;height:130px;}
+  .ring-track{fill:none;stroke:#1D2722;stroke-width:10;}
+  .ring-value-fill{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .4s ease, stroke .3s ease;}
+  .ring-center{
+    position:absolute;top:0;left:0;right:0;bottom:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .ring-num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;line-height:1;}
+  .ring-unit{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:2px;}
+
+  .sensor-status{
+    text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+    margin-bottom:4px;
+  }
+  .sensor-status.safe{color:var(--safe);}
+  .sensor-status.warn{color:var(--warn);}
+  .sensor-status.alarm{color:var(--alarm);}
+  .threshold-note{
+    text-align:center;font-size:10px;color:var(--muted);margin-bottom:10px;
+  }
+
+  .mini-chart-wrap{border-top:1px solid var(--panel-border);padding-top:8px;}
+  canvas.mini-chart{width:100%;height:56px;display:block;}
+
+  .relay-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:14px;
+    max-width:520px;
+    margin:0 auto;
+  }
+  .relay-card{
+    background:rgba(20,27,24,0.92);
+    backdrop-filter:blur(4px);
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .relay-card .rname{font-size:13px;font-weight:600;}
+  .switch{
+    position:relative;width:52px;height:28px;flex-shrink:0;
+    background:#1D2722;border-radius:999px;
+    cursor:pointer;border:1px solid var(--panel-border);
+    transition:background .2s ease;
+  }
+  .switch.on{background:var(--accent);}
+  .switch .knob{
+    position:absolute;top:2px;left:2px;
+    width:22px;height:22px;border-radius:50%;
+    background:#DCE7E1;
+    transition:transform .2s ease;
+  }
+  .switch.on .knob{transform:translateX(24px);}
+  .relay-state{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--muted);margin-top:4px;
+  }
+  .relay-state.on{color:var(--accent);}
+  .relay-text{display:flex;flex-direction:column;}
+
+  @media (max-width:420px){
+    .relay-grid{grid-template-columns:1fr;max-width:100%;}
+  }
+
+  footer{
+    margin-top:12px;color:var(--muted);
+    font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;
+  }
+
+  .kontak-info{
+    margin-top:18px;
+    text-align:center;
+    color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    line-height:1.8;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-side">
+      <img src="logoKKN.png" alt="Logo KKN Kelompok 31">
+    </div>
+
+    <div class="title-center">
+      <h1>Monitoring filter asap</h1>
+      <p class="subtitle">KKN Kelompok 31 &middot; Desa Bandungan, Kec. Pakong</p>
+      <div class="status offline" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusText">Menghubungkan...</span>
+      </div>
+    </div>
+
+    <div class="logo-side">
+      <img src="logoUniv.png" alt="Logo Universitas">
+    </div>
+  </header>
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin:-16px 0 20px;">
+    <a href="menu.html" class="logout-btn" style="text-decoration:none;display:inline-block;">Kembali ke menu</a>
+    <button class="logout-btn" id="logoutBtn">Keluar</button>
+  </div>
+
+  <section>
+    <h2>Status sistem</h2>
+    <div class="system-status-grid">
+      <div class="system-status-card" id="card-pembakaran">
+        <div class="ss-left">
+          <span class="ss-label">Status Pembakaran</span>
+          <span class="ss-sub">Berdasarkan sensor sebelum filter (MQ-2 &amp; MQ-135)</span>
+        </div>
+        <span class="pill muted" id="pill-pembakaran">MEMUAT...</span>
+      </div>
+      <div class="system-status-card" id="card-filtrasi">
+        <div class="ss-left">
+          <span class="ss-label">Status Filtrasi</span>
+          <span class="ss-sub">Perbandingan hasil sesudah filter terhadap ambang aman</span>
+        </div>
+        <span class="pill muted" id="pill-filtrasi">MEMUAT...</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sensor asap</h2>
+    <div class="box-grid" id="boxGrid"></div>
+  </section>
+
+  <section>
+    <h2>Kontrol relay manual</h2>
+    <div class="relay-grid" id="relayGrid"></div>
+  </section>
+
+  <footer id="lastUpdate">Belum ada data masuk</footer>
+
+  <div class="kontak-info">
+    <div>Email: kkndsbandungan@gmail.com</div>
+    <div>Instagram: kkn_31_bandungan</div>
+    <div>Tiktok: KKN Ds.BANDUNGAN</div>
+  </div>
+</div>
+
+<script>
+// ======== CEK LOGIN — wajib di paling atas ========
+if (sessionStorage.getItem("loggedIn") !== "true") {
+  window.location.href = "index.html";
+}
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem("loggedIn");
+  window.location.href = "index.html";
+});
+// ====================================================
+
+// ======== KONFIGURASI — samakan persis dengan kode ESP32 ========
+const MQTT_HOST           = "wss://broker.hivemq.com:8884/mqtt";
+// Identitas unik kelompok — HARUS sama persis dengan kode ESP32
+const MQTT_TOPIC_DATA     = "kkn31-bandungan-pakong/mq-gas-monitor/data";
+const MQTT_TOPIC_CONTROL  = "kkn31-bandungan-pakong/mq-gas-monitor/control";
+
+const GAUGE_MAX = 4095;
+const HISTORY_LENGTH = 40;
+
+// ======== Ambang batas berdasarkan hasil kalibrasi (nilai ADC 0-4095) ========
+// Sangat Baik  : MQ-2 < 150   | MQ-135 < 200
+// Normal       : MQ-2 150-300 | MQ-135 200-350
+// Waspada      : MQ-2 300-500 | MQ-135 350-500
+// Bahaya       : MQ-2 > 500   | MQ-135 > 500
+const THRESHOLDS = {
+  "MQ-2":   { sangatBaik: 150, normal: 300, waspada: 500 },
+  "MQ-135": { sangatBaik: 200, normal: 350, waspada: 500 },
+};
+const LEVEL_LABEL = ["SANGAT BAIK", "NORMAL", "WASPADA", "BAHAYA"];
+
+function getLevel(value, type){
+  const t = THRESHOLDS[type];
+  if (value < t.sangatBaik) return 0;
+  if (value < t.normal)     return 1;
+  if (value < t.waspada)    return 2;
+  return 3;
+}
+function levelColorVar(level){
+  if (level <= 1) return "var(--safe)";
+  if (level === 2) return "var(--warn)";
+  return "var(--alarm)";
+}
+function levelClass(level){
+  if (level <= 1) return "safe";
+  if (level === 2) return "warn";
+  return "alarm";
+}
+
+// Urutan grup menentukan urutan tampil ke bawah: sebelum filter dulu, baru sesudah filter.
+const GROUPS = [
+  {
+    title: "Sebelum filter (asap masuk)",
+    activeKey: "relayIn",
+    sensors: [
+      { key: "mq1", label: "MQ-2",   sub: "LPG / asap / CO", type: "MQ-2" },
+      { key: "mq2", label: "MQ-135", sub: "Kualitas udara",  type: "MQ-135" },
+    ]
+  },
+  {
+    title: "Sesudah filter (asap keluar)",
+    activeKey: "relayOut",
+    sensors: [
+      { key: "mq3", label: "MQ-2",   sub: "LPG / asap / CO", type: "MQ-2" },
+      { key: "mq4", label: "MQ-135", sub: "Kualitas udara",  type: "MQ-135" },
+    ]
+  },
+];
+
+// hw  = nomor relay sebenarnya di hardware (tetap 3-6, sesuai kode ESP32).
+// label = nomor yang ditampilkan di antarmuka (mulai dari 1).
+const MANUAL_RELAYS = [
+  { hw: 3, label: 1 },
+  { hw: 4, label: 2 },
+  { hw: 5, label: 3 },
+  { hw: 6, label: 4 },
+];
+
+const boxGrid = document.getElementById("boxGrid");
+const relayGrid = document.getElementById("relayGrid");
+const statusPill = document.getElementById("statusPill");
+const statusText = document.getElementById("statusText");
+const lastUpdateEl = document.getElementById("lastUpdate");
+const cardPembakaran = document.getElementById("card-pembakaran");
+const pillPembakaran = document.getElementById("pill-pembakaran");
+const cardFiltrasi = document.getElementById("card-filtrasi");
+const pillFiltrasi = document.getElementById("pill-filtrasi");
+
+const RING_R = 50;
+const RING_C = 2 * Math.PI * RING_R;
+
+const history = {};
+const lastLevels = {}; // level terakhir tiap sensor, dipakai untuk status sistem
+
+function thresholdNote(type){
+  const t = THRESHOLDS[type];
+  return `Baik &lt;${t.sangatBaik} &middot; Normal &lt;${t.normal} &middot; Waspada &lt;${t.waspada} &middot; Bahaya &ge;${t.waspada}`;
+}
+
+function ringSvgTemplate(key){
+  return `
+    <svg viewBox="0 0 120 120" class="ring-svg">
+      <circle class="ring-track" cx="60" cy="60" r="${RING_R}"/>
+      <circle class="ring-value-fill" id="ringfill-${key}" cx="60" cy="60" r="${RING_R}"
+        stroke="var(--safe)"
+        stroke-dasharray="${RING_C}" stroke-dashoffset="${RING_C}"
+        transform="rotate(-90 60 60)"/>
+    </svg>`;
+}
+
+GROUPS.forEach((group) => {
+  const box = document.createElement("div");
+  box.className = "filter-box";
+  box.id = "box-" + group.activeKey;
+
+  const sensorPanels = group.sensors.map(s => {
+    history[s.key] = [];
+    lastLevels[s.key] = 0;
+    return `
+      <div class="sensor-panel">
+        <div class="sensor-name">${s.label}</div>
+        <div class="sensor-sub">${s.sub}</div>
+        <div class="ring-wrap">
+          ${ringSvgTemplate(s.key)}
+          <div class="ring-center">
+            <div class="ring-num" id="val-${s.key}">--</div>
+            <div class="ring-unit">ADC</div>
+          </div>
+        </div>
+        <div class="sensor-status safe" id="status-${s.key}">SANGAT BAIK</div>
+        <div class="threshold-note">${thresholdNote(s.type)}</div>
+        <div class="mini-chart-wrap">
+          <canvas class="mini-chart" id="chart-${s.key}"></canvas>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="box-head">
+      <span class="label">${group.title}</span>
+      <span class="pill" id="pill-${group.activeKey}">SANGAT BAIK</span>
+    </div>
+    <div class="sensor-split">${sensorPanels}</div>
+  `;
+  boxGrid.appendChild(box);
+});
+
+MANUAL_RELAYS.forEach((relay) => {
+  const card = document.createElement("div");
+  card.className = "relay-card";
+  card.innerHTML = `
+    <div class="relay-text">
+      <div class="rname">Relay ${relay.label}</div>
+      <div class="relay-state" id="state-${relay.hw}">OFF</div>
+    </div>
+    <div class="switch" id="switch-${relay.hw}"></div>
+  `;
+  relayGrid.appendChild(card);
+
+  const switchEl = card.querySelector(".switch");
+  switchEl.addEventListener("click", () => {
+    const turningOn = !switchEl.classList.contains("on");
+    client.publish(MQTT_TOPIC_CONTROL, `R${relay.hw}:${turningOn ? 1 : 0}`);
+    setRelaySwitch(relay.hw, turningOn);
+  });
+});
+
+function setRelaySwitch(hw, on){
+  const switchEl = document.getElementById("switch-" + hw);
+  const stateEl = document.getElementById("state-" + hw);
+  switchEl.classList.toggle("on", on);
+  stateEl.classList.toggle("on", on);
+  stateEl.textContent = on ? "ON" : "OFF";
+}
+
+function setStatus(online){
+  statusPill.classList.toggle("online", online);
+  statusPill.classList.toggle("offline", !online);
+  statusText.textContent = online ? "Terhubung" : "Terputus";
+}
+
+function updateSensor(key, value, type){
+  const level = getLevel(value, type);
+  lastLevels[key] = level;
+
+  const fraction = Math.min(1, value / GAUGE_MAX);
+  const color = levelColorVar(level);
+
+  const ringFill = document.getElementById("ringfill-" + key);
+  ringFill.setAttribute("stroke-dashoffset", RING_C * (1 - fraction));
+  ringFill.setAttribute("stroke", color);
+
+  document.getElementById("val-" + key).textContent = value;
+
+  const statusEl = document.getElementById("status-" + key);
+  statusEl.textContent = LEVEL_LABEL[level];
+  statusEl.className = "sensor-status " + levelClass(level);
+
+  const h = history[key];
+  h.push(value);
+  if (h.length > HISTORY_LENGTH) h.shift();
+  drawMiniChart(key, h, color);
+
+  return level;
+}
+
+function drawMiniChart(key, h, color){
+  const canvas = document.getElementById("chart-" + key);
+  const width = canvas.clientWidth || 180;
+  const height = canvas.clientHeight || 56;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+
+  if (h.length < 2) return;
+
+  const pad = 4;
+  const plotW = width - pad * 2;
+  const plotH = height - pad * 2;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  h.forEach((val, idx) => {
+    const x = pad + (plotW * idx) / (HISTORY_LENGTH - 1);
+    const y = pad + plotH * (1 - Math.min(1, val / GAUGE_MAX));
+    if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+function updateGroup(group, data){
+  const box = document.getElementById("box-" + group.activeKey);
+  const pill = document.getElementById("pill-" + group.activeKey);
+
+  let maxLevel = 0;
+  group.sensors.forEach(s => {
+    const value = data[s.key] ?? 0;
+    const lvl = updateSensor(s.key, value, s.type);
+    maxLevel = Math.max(maxLevel, lvl);
+  });
+
+  box.classList.toggle("active", maxLevel === 2);
+  box.classList.toggle("danger", maxLevel === 3);
+  pill.textContent = LEVEL_LABEL[maxLevel];
+  pill.className = "pill " + (maxLevel <= 1 ? "" : maxLevel === 2 ? "warn" : "alarm");
+
+  return maxLevel;
+}
+
+// Status Pembakaran & Status Filtrasi dihitung dari level sensor sebelum/sesudah filter
+function updateSystemStatus(levelIn, levelOut){
+  const pembakaranAktif = levelIn >= 1; // sudah keluar dari kategori "Sangat Baik"
+
+  cardPembakaran.classList.toggle("aktif", pembakaranAktif);
+  pillPembakaran.textContent = pembakaranAktif ? "AKTIF (Asap Terdeteksi)" : "TIDAK AKTIF";
+  pillPembakaran.className = "pill " + (pembakaranAktif ? "warn" : "");
+
+  cardFiltrasi.classList.remove("aktif", "berhasil", "gagal");
+
+  if (!pembakaranAktif) {
+    pillFiltrasi.textContent = "STANDBY";
+    pillFiltrasi.className = "pill muted";
+  } else if (levelOut <= 1) {
+    cardFiltrasi.classList.add("berhasil");
+    pillFiltrasi.textContent = "BERHASIL";
+    pillFiltrasi.className = "pill";
+  } else {
+    cardFiltrasi.classList.add("gagal");
+    pillFiltrasi.textContent = "TIDAK EFEKTIF";
+    pillFiltrasi.className = "pill " + (levelOut === 2 ? "warn" : "alarm");
+  }
+}
+
+const client = mqtt.connect(MQTT_HOST, {
+  clientId: "web-dashboard-" + Math.random().toString(16).slice(2),
+});
+
+client.on("connect", () => {
+  setStatus(true);
+  client.subscribe(MQTT_TOPIC_DATA);
+});
+
+client.on("reconnect", () => setStatus(false));
+client.on("close", () => setStatus(false));
+client.on("error", () => setStatus(false));
+
+client.on("message", (topic, message) => {
+  if (topic !== MQTT_TOPIC_DATA) return;
+
+  try {
+    const data = JSON.parse(message.toString());
+
+    const levelIn = updateGroup(GROUPS[0], data);
+    const levelOut = updateGroup(GROUPS[1], data);
+    updateSystemStatus(levelIn, levelOut);
+
+    if (Array.isArray(data.relay)) {
+      MANUAL_RELAYS.forEach((relay, idx) => {
+        setRelaySwitch(relay.hw, !!data.relay[idx]);
+      });
+    }
+
+    lastUpdateEl.textContent = "Terakhir diperbarui: " + new Date().toLocaleTimeString("id-ID");
+  } catch (e) {
+    console.error("Gagal membaca pesan MQTT:", e);
+  }
+});
+
+window.addEventListener("resize", () => {
+  GROUPS.forEach(group => {
+    group.sensors.forEach(s => drawMiniChart(s.key, history[s.key], levelColorVar(lastLevels[s.key])));
+  });
+});
+</script>
+</body>
+</html>

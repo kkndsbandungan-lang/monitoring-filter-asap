@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profil Kelompok - KKN 31</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --panel:#141B18;
+    --panel-border:#233029;
+    --text:#DCE7E1;
+    --muted:#7D9187;
+    --accent:#4FA0E8;
+    --line: rgba(125,145,135,0.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    background-image:
+      linear-gradient(180deg, rgba(11,16,14,0.88) 0%, rgba(11,16,14,0.94) 100%),
+      url('latarlogin.jpg');
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+    min-height:100vh;
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  .back-link{
+    display:inline-block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    text-decoration:none;
+    margin-bottom:24px;
+  }
+  .back-link:hover{color:var(--accent);}
+
+  header{text-align:center;margin-bottom:36px;}
+  header img{height:70px;margin-bottom:14px;}
+  h1{font-size:22px;font-weight:600;margin:0 0 6px;}
+  .subtitle{color:var(--muted);font-size:13px;margin:0;}
+
+  h2{
+    font-size:14px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1px;
+    margin:0 0 16px;text-align:center;
+  }
+
+  .struktur{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:56px;
+    margin-bottom:20px;
+    padding-top:8px;
+  }
+  .row{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:28px;
+    width:100%;
+  }
+
+  .connector-layer{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+  .connector-layer .line{
+    position:absolute;
+    background:var(--line);
+  }
+
+  .jabatan-card{
+    background:rgba(20,27,24,0.85);
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    text-align:center;
+    backdrop-filter:blur(4px);
+    cursor:pointer;
+    transition:border-color .2s ease, transform .2s ease;
+
+    width:150px;
+    height:190px;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .jabatan-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .jabatan-card.pimpinan{
+    border-color:var(--accent);
+    width:180px;
+    height:210px;
+  }
+
+  .jabatan-nama{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .jabatan-jumlah{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--muted);
+  }
+
+  .jabatan-card.photo-card{
+    height:auto;
+    align-items:stretch;
+    justify-content:flex-start;
+    padding:12px;
+    cursor:pointer;
+  }
+  .jabatan-card.photo-card.static{
+    cursor:default;
+  }
+
+  .card-header{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:8px;
+    gap:6px;
+  }
+  .card-header .jabatan-nama-small{
+    font-size:11px;
+    font-weight:600;
+    text-align:center;
+    line-height:1.3;
+    width:100%;
+  }
+
+  .member-grid{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .member-photo{
+    width:92px;
+    height:92px;
+    border-radius:10px;
+    object-fit:cover;
+    background:#0F1512;
+    border:1px solid var(--panel-border);
+    display:block;
+  }
+  .member-photo[data-lightbox="1"]{
+    cursor:zoom-in;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .member-photo[data-lightbox="1"]:hover{
+    transform:scale(1.05);
+    border-color:var(--accent);
+  }
+
+  .pair-group{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .pair-split{
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+  }
+  .pair-back{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    background:transparent;
+    border:1px solid var(--panel-border);
+    border-radius:20px;
+    padding:4px 10px;
+    cursor:pointer;
+  }
+  .pair-back:hover{color:var(--accent);border-color:var(--accent);}
+
+  .lightbox-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(5,8,7,0.92);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    padding:24px;
+  }
+  .lightbox-overlay.active{display:flex;}
+  .lightbox-content{
+    position:relative;
+    max-width:90vw;
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .lightbox-content img{
+    max-width:90vw;
+    max-height:78vh;
+    border-radius:14px;
+    border:1px solid var(--panel-border);
+    display:block;
+    background:#0F1512;
+  }
+  .lightbox-caption{
+    text-align:center;
+    color:var(--text);
+    font-size:13px;
+    margin-top:14px;
+    font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.5px;
+  }
+  .lightbox-close{
+    position:absolute;
+    top:-38px;
+    right:0;
+    background:transparent;
+    border:none;
+    color:var(--text);
+    font-size:30px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .lightbox-close:hover{color:var(--accent);}
+
+  /* ---- info kontak kelompok ---- */
+  .kontak-section{
+    margin-top:48px;
+  }
+  .kontak-list{
+    max-width:420px;
+    margin:0 auto;
+    background:rgba(20,27,24,0.85);
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    padding:20px 24px;
+    backdrop-filter:blur(4px);
+  }
+  .kontak-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 0;
+  }
+  .kontak-item + .kontak-item{
+    border-top:1px solid var(--panel-border);
+  }
+  .kontak-icon{
+    flex:0 0 auto;
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    background:rgba(79,160,232,0.12);
+    border:1px solid var(--panel-border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+  }
+  .kontak-text{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    text-align:left;
+  }
+  .kontak-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .kontak-value{
+    font-size:13px;
+    font-weight:500;
+    color:var(--text);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="menu.html" class="back-link">&larr; Kembali ke menu</a>
+
+  <header>
+    <img src="logoKKN.png" alt="Logo KKN Kelompok 31">
+    <h1>KKN Kelompok 31</h1>
+    <p class="subtitle">Desa Bandungan</p>
+  </header>
+
+  <section>
+    <h2>Struktur organisasi</h2>
+    <p style="text-align:center;color:var(--muted);font-size:11px;margin:0 0 16px;font-family:'JetBrains Mono',monospace;">
+      Klik kotak untuk menampilkan foto anggota, klik foto untuk memperbesar
+    </p>
+    <div class="struktur" id="strukturWrap">
+      <div class="connector-layer" id="connectorLayer"></div>
+    </div>
+  </section>
+
+  <section class="kontak-section">
+    <h2>Kontak kelompok</h2>
+    <div class="kontak-list">
+      <div class="kontak-item">
+        <div class="kontak-icon">&#9993;</div>
+        <div class="kontak-text">
+          <span class="kontak-label">Email</span>
+          <span class="kontak-value">kkndsbandungan@gmail.com</span>
+        </div>
+      </div>
+      <div class="kontak-item">
+        <div class="kontak-icon">&#128247;</div>
+        <div class="kontak-text">
+          <span class="kontak-label">Instagram</span>
+          <span class="kontak-value">kkn_31_bandungan</span>
+        </div>
+      </div>
+      <div class="kontak-item">
+        <div class="kontak-icon">&#9835;</div>
+        <div class="kontak-text">
+          <span class="kontak-label">Tiktok</span>
+          <span class="kontak-value">KKN Ds.BANDUNGAN</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <div class="lightbox-content">
+    <button class="lightbox-close" id="lightboxClose" aria-label="Tutup">&times;</button>
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+</div>
+
+<script>
+if (sessionStorage.getItem("loggedIn") !== "true") {
+  window.location.href = "login.html";
+}
+
+const STRUKTUR = [
+  {
+    row: [
+      {
+        pair: [
+          { nama: "Koordinator Desa", photos: ["putra.jpg"] },
+          { nama: "Wakil Koordinator Desa", photos: ["dio.jpg"] },
+        ],
+        mergedNama: "Koordinator & Wakil Koordinator Desa",
+        mergedPhoto: "kordeswakordes.jpg",
+        pimpinan: true,
+      },
+    ]
+  },
+  {
+    row: [
+      {
+        pair: [
+          { nama: "Sekretaris", photos: ["aliya.jpg", "nova.jpg"] },
+          { nama: "Bendahara", photos: ["tasya.jpg"] },
+        ],
+        mergedNama: "Sekretaris & Bendahara",
+        mergedPhoto: "bendaharaseketaris.jpg",
+      },
+    ]
+  },
+  {
+    row: [
+      {
+        nama: "Sie Acara",
+        mergedPhoto: "acara.jpg",
+        photos: ["mareta.jpg", "ipul.jpg", "nuril.jpg"],
+        reveal: true,
+      },
+      {
+        nama: "Sie PDD",
+        mergedPhoto: "pdd.jpg",
+        photos: ["sofia.jpg", "april.jpg", "fabio.jpg"],
+        reveal: true,
+      },
+      {
+        nama: "Sie Humas & Perkap",
+        mergedPhoto: "humkab.jpg",
+        photos: ["elvan.jpg", "elya.jpg", "siti.jpg", "wahab.jpg"],
+        reveal: true,
+      },
+      {
+        nama: "Sie Konsumsi",
+        mergedPhoto: "konsum.jpg",
+        photos: ["vani.jpg"],
+        reveal: true,
+      },
+    ]
+  },
+];
+
+const strukturWrap = document.getElementById("strukturWrap");
+const connectorLayer = document.getElementById("connectorLayer");
+
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function captionFromSrc(src){
+  const file = src.split("/").pop().split("?")[0];
+  const base = file.replace(/\.[a-zA-Z0-9]+$/, "");
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+function openLightbox(src, caption){
+  lightboxImg.src = src;
+  lightboxImg.alt = caption;
+  lightboxCaption.textContent = caption;
+  lightboxOverlay.classList.add("active");
+}
+
+function closeLightbox(){
+  lightboxOverlay.classList.remove("active");
+}
+
+lightboxOverlay.addEventListener("click", (e) => {
+  if (e.target === lightboxOverlay) closeLightbox();
+});
+lightboxClose.addEventListener("click", closeLightbox);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLightbox();
+});
+
+function attachLightboxHandlers(container){
+  container.querySelectorAll('img[data-lightbox="1"]').forEach(img => {
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openLightbox(img.getAttribute("src"), captionFromSrc(img.getAttribute("src")));
+    });
+  });
+}
+
+function buildMemberGridHTML(item){
+  const [leader, ...anggota] = item.photos;
+  return `
+    <div class="card-header">
+      <span class="jabatan-nama-small">${item.nama}</span>
+    </div>
+    <div class="member-grid">
+      <img class="member-photo" data-lightbox="1" src="${leader}" alt="${item.nama} - koordinator">
+      ${anggota.map((p, i) => `<img class="member-photo" data-lightbox="1" src="${p}" alt="${item.nama} - anggota ${i + 2}">`).join("")}
+    </div>
+  `;
+}
+
+function createPhotoCard(item, extraClass){
+  const card = document.createElement("div");
+  card.className = "jabatan-card photo-card static" + (extraClass ? " " + extraClass : "");
+  card.innerHTML = buildMemberGridHTML(item);
+  attachLightboxHandlers(card);
+  return card;
+}
+
+function createSingleCard(item){
+  return createPhotoCard(item);
+}
+
+function createRevealCard(item){
+  const card = document.createElement("div");
+  card.className = "jabatan-card photo-card";
+  let revealed = false;
+
+  function render(){
+    card.innerHTML = "";
+    if (!revealed){
+      card.classList.remove("static");
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="jabatan-nama-small">${item.nama}</span>
+        </div>
+        <div class="member-grid">
+          <img class="member-photo" src="${item.mergedPhoto}" alt="${item.nama}">
+        </div>
+      `;
+    } else {
+      card.classList.add("static");
+      card.innerHTML = buildMemberGridHTML(item);
+      attachLightboxHandlers(card);
+    }
+  }
+
+  card.addEventListener("click", () => {
+    if (!revealed){
+      revealed = true;
+      render();
+      redraw();
+    }
+  });
+
+  render();
+  return card;
+}
+
+function createPairGroup(item){
+  const wrapper = document.createElement("div");
+  wrapper.className = "pair-group";
+  let merged = true;
+
+  function render(){
+    wrapper.innerHTML = "";
+
+    if (merged){
+      const card = document.createElement("div");
+      card.className = "jabatan-card photo-card" + (item.pimpinan ? " pimpinan" : "");
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="jabatan-nama-small">${item.mergedNama}</span>
+        </div>
+        <div class="member-grid">
+          <img class="member-photo" src="${item.mergedPhoto}" alt="${item.mergedNama}">
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        merged = false;
+        render();
+        redraw();
+      });
+      wrapper.appendChild(card);
+    } else {
+      const backBtn = document.createElement("button");
+      backBtn.className = "pair-back";
+      backBtn.innerHTML = "&larr; Gabung kembali";
+      backBtn.addEventListener("click", () => {
+        merged = true;
+        render();
+        redraw();
+      });
+      wrapper.appendChild(backBtn);
+
+      const splitRow = document.createElement("div");
+      splitRow.className = "pair-split";
+      item.pair.forEach(sub => {
+        splitRow.appendChild(createPhotoCard(sub, item.pimpinan ? "pimpinan" : ""));
+      });
+      wrapper.appendChild(splitRow);
+    }
+  }
+
+  render();
+  return wrapper;
+}
+
+STRUKTUR.forEach(rowGroup => {
+  const rowEl = document.createElement("div");
+  rowEl.className = "row";
+
+  rowGroup.row.forEach(item => {
+    let el;
+    if (item.pair) el = createPairGroup(item);
+    else if (item.reveal) el = createRevealCard(item);
+    else el = createSingleCard(item);
+    rowEl.appendChild(el);
+  });
+
+  strukturWrap.appendChild(rowEl);
+});
+
+function makeLine(x1, y1, x2, y2){
+  const div = document.createElement("div");
+  div.className = "line";
+  if (y1 === y2){
+    div.style.left = Math.min(x1, x2) + "px";
+    div.style.top = (y1 - 0.75) + "px";
+    div.style.width = Math.abs(x2 - x1) + "px";
+    div.style.height = "1.5px";
+  } else {
+    div.style.left = (x1 - 0.75) + "px";
+    div.style.top = Math.min(y1, y2) + "px";
+    div.style.width = "1.5px";
+    div.style.height = Math.abs(y2 - y1) + "px";
+  }
+  connectorLayer.appendChild(div);
+}
+
+function drawConnectors(){
+  connectorLayer.innerHTML = "";
+  const wrapRect = strukturWrap.getBoundingClientRect();
+  const rows = Array.from(strukturWrap.querySelectorAll(".row"));
+
+  for (let i = 1; i < rows.length; i++){
+    const prevRect = rows[i - 1].getBoundingClientRect();
+    const currRect = rows[i].getBoundingClientRect();
+
+    const prevCenterX = prevRect.left + prevRect.width / 2 - wrapRect.left;
+    const prevBottomY = prevRect.bottom - wrapRect.top;
+    const currTopY = currRect.top - wrapRect.top;
+    const bridgeY = prevBottomY + (currTopY - prevBottomY) / 2;
+
+    makeLine(prevCenterX, prevBottomY, prevCenterX, bridgeY);
+
+    const childCenters = Array.from(rows[i].children).map(card => {
+      const r = card.getBoundingClientRect();
+      return r.left + r.width / 2 - wrapRect.left;
+    });
+
+    const allX = childCenters.concat([prevCenterX]);
+    const leftX = Math.min(...allX);
+    const rightX = Math.max(...allX);
+
+    makeLine(leftX, bridgeY, rightX, bridgeY);
+    childCenters.forEach(cx => makeLine(cx, bridgeY, cx, currTopY));
+  }
+}
+
+function redraw(){
+  requestAnimationFrame(drawConnectors);
+}
+
+redraw();
+window.addEventListener("resize", redraw);
+</script>
+</body>
+</html>

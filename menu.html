@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu - Monitoring Filter Asap</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B100E;
+    --panel:#141B18;
+    --panel-border:#233029;
+    --text:#DCE7E1;
+    --muted:#7D9187;
+    --accent:#4FA0E8;
+    --alarm:#FF5B4F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background-image:
+      linear-gradient(180deg, rgba(11,16,14,0.88) 0%, rgba(11,16,14,0.94) 100%),
+      url('latarlogin.jpg');
+    background-size:cover;
+    background-position:center;
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:32px 20px 60px;
+  }
+  .wrap{max-width:760px;margin:0 auto;}
+
+  header{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    gap:16px;
+    margin-bottom:40px;
+  }
+  header .logo-side{display:flex;align-items:center;justify-content:center;}
+  header .logo-side img{height:56px;width:auto;max-width:100px;object-fit:contain;}
+  header .title-center{text-align:center;}
+  h1{font-size:20px;font-weight:600;margin:0 0 4px;}
+  .subtitle{color:var(--muted);font-size:12px;margin:0;}
+
+  .logout-btn{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    padding:8px 14px;border-radius:999px;
+    border:1px solid var(--panel-border);background:var(--panel);
+    color:var(--muted);cursor:pointer;
+  }
+  .logout-btn:hover{color:var(--alarm);border-color:var(--alarm);}
+
+  .menu-grid{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .menu-card{
+    display:block;
+    background:rgba(20,27,24,0.85);
+    border:1px solid var(--panel-border);
+    border-radius:16px;
+    padding:26px 22px;
+    text-decoration:none;
+    color:var(--text);
+    backdrop-filter:blur(4px);
+    transition:border-color .2s ease, transform .2s ease;
+  }
+  .menu-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+
+  .menu-card .name{font-size:16px;font-weight:600;margin-bottom:4px;}
+  .menu-card .desc{font-size:12px;color:var(--muted);}
+
+  .menu-card.locked{
+    cursor:not-allowed;
+    opacity:0.5;
+    pointer-events:none;
+  }
+  .menu-card.locked .desc::after{
+    content:" (belum tersedia)";
+    color:var(--alarm);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-side">
+      <img src="logoKKN.png" alt="Logo KKN Kelompok 31">
+    </div>
+    <div class="title-center">
+      <h1>Menu utama</h1>
+      <p class="subtitle">KKN Kelompok 31 &middot; Desa Bandungan</p>
+    </div>
+    <div class="logo-side">
+      <img src="logoUniv.png" alt="Logo Universitas">
+    </div>
+  </header>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+    <button class="logout-btn" id="logoutBtn">Keluar</button>
+  </div>
+
+  <div class="menu-grid">
+    <a href="monitoring.html" class="menu-card">
+      <div class="name">Monitoring</div>
+      <div class="desc">Sensor asap & kontrol relay</div>
+    </a>
+
+    <a href="profil.html" class="menu-card">
+      <div class="name">Profil kelompok KKN</div>
+      <div class="desc">Struktur & anggota</div>
+    </a>
+
+    <a href="pcb.html" class="menu-card">
+      <div class="name">Desain PCB</div>
+      <div class="desc">Skematik sirkuit</div>
+    </a>
+
+    <a href="mekanik.html" class="menu-card">
+      <div class="name">Desain mekanik</div>
+      <div class="desc">Rancangan alat pembakaran</div>
+    </a>
+  </div>
+</div>
+
+<script>
+if (sessionStorage.getItem("loggedIn") !== "true") {
+  window.location.href = "login.html";
+}
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem("loggedIn");
+  window.location.href = "login.html";
+});
+</script>
+</body>
+</html>
